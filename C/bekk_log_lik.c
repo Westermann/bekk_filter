@@ -43,13 +43,13 @@ void scalar_bekk_filter(double *_s, double *_eps, double *ll, double *p, double 
       // check if kth lag actually exists
       if( t >= k ) {
 
-        // choletzy update (sigma + yy)
-        chol_up(S[t], S[t-k], y[t-k], *N, lambda / k, alpha / k, work1);    
+        // create the current sigma from lagged sigma + yy through cholesky update
+        chol_up(S[t], S[t-k], y[t-k], *N, beta / k, alpha / k, work1);    
       }
 
       // sequential choletzky update (sigma + C)
       for( n=0; n<*N; ++n ){
-        chol_up(S[t], S[t], C[n], *N, lambda, beta, work1);    
+        chol_up(S[t], S[t], C[n], *N, 1, lambda, work1);    
       }
 
     }

@@ -17,11 +17,16 @@ scalar.bekk.filter <- function(y,param,k){
 
 scalar.bekk.fit <- function(y,opts){
   if( is.null(opts$lags) ) { lags <- 1 } else { lags <- opts$lags }
+  if( is.null(opts$optim.lib) ) { optim.lib <- "optim" } else { optim.lib <- opts$optim.lib }
   if( is.null(opts$param) ) { param.init <- c( 0.9, 0.5 ) } else { param.init <- opts$param.init }
   if( is.null(opts$fit) ){ fit <- TRUE } else { fit <- as.logical( opts$fit ) }
   obj   <- function(x,k){ return( -scalar.bekk.filter(y,x,k)$loglik ) }  
   if( fit==TRUE ){ 
-    res <- nlminb( param.init, obj, lower=0, upper=1, k=lags )
+    if( optim.lib=="nlminb" ){
+      res <- nlminb( param.init, obj, lower=0, upper=1, k=lags )
+    } else if( optim.lib=="optim" ) {
+      res <- optim( param.init, obj, k=lags)
+    }
     param.est <- res$par
   } else {
     param.est <- param.init 
