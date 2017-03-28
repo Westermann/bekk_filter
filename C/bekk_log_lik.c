@@ -2,18 +2,18 @@
 #include <math.h>
 #include "utilities.c"
 
-void scalar_bekk_filter(double *_s, double *_eps, double *ll, double *p, double *_y, int *T, int *N){
+void scalar_bekk_filter(double *_s, double *_eps, double *ll, double *p, double *_y, int *T, int *N, int *K){
 
-  int t,i,j,n;
+  int t,i,j,n,k;
   double logden, alpha, beta, lambda;
   double ***S, **C, **y, **eps;
   double *work1, **work2;
 
   *ll = 0;
 
-  alpha   = p[0] * p[1];
-  beta    = p[0] * (1 - p[1]);
-  lambda  = 1 - alpha - beta;
+  lambda  = p[0];
+  alpha   = (1-lambda) * p[1];
+  beta    = (1-lambda) * (1 - p[1]);
 
   S     = create_real_array3d(*T,*N,*N);
   C     = create_real_matrix(*N,*N);
@@ -37,12 +37,21 @@ void scalar_bekk_filter(double *_s, double *_eps, double *ll, double *p, double 
   // iterate through all points in the time-series
   for( t=1; t<*T; ++t ){
 
-    // choletzy update (sigma + yy)
-    chol_up(S[t], S[t-1], y[t-1], *N, lambda, alpha, work1);    
+    // iterate through the k lags
+    for( k=1; k<=*K; ++k){
 
-    // sequential choletzky update (sigma + C)
-    for( n=0; n<*N; ++n ){
-      chol_up(S[t], S[t], C[n], *N, lambda, beta, work1);    
+      // check if kth lag actually exists
+      if( t >= k ) {
+
+        // choletzy update (sigma + yy)
+        chol_up(S[t], S[t-k], y[t-k], *N, lambda / k, alpha / k, work1);    
+      }
+
+      // sequential choletzky update (sigma + C)
+      for( n=0; n<*N; ++n ){
+        chol_up(S[t], S[t], C[n], *N, lambda, beta, work1);    
+      }
+
     }
 
     fwdinv(work2,S[t],*N);
@@ -67,3 +76,12 @@ void scalar_bekk_filter(double *_s, double *_eps, double *ll, double *p, double 
   destroy_real_matrix(work2,*N,*N);
 
 }
+
+
+/*   Rprintf("\n------------------------------\n"); */
+/*   for(i=0;i<*N;++i){ */
+/*     for(j=0;j<*N;++j){ */
+/*       Rprintf("|%f|",S[t][i][j]); */
+/*     } */
+/*     Rprintf("\n------------------------------\n"); */
+/*   } */
